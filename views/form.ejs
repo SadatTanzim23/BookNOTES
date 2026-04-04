@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+        <%= book ? 'Edit Book' : 'Add Book' %> — BookNotes</title>
+    <link rel="stylesheet" href="/styles/main.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,500&family=Lora:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet" />
+</head>
+
+<body class="form-page">
+
+    <div class="form-wrapper">
+        <a href="/" class="back-link">← Back to shelf</a>
+
+        <h1 class="form-heading">
+            <%= book && book.id ? 'Edit Entry' : 'New Entry' %>
+        </h1>
+
+        <% if (error) { %>
+            <p class="form-error">
+                <%= error %>
+            </p>
+            <% } %>
+
+                <!--cover lookup helper-->
+                <div class="cover-lookup">
+                    <label for="lookup-query">Auto-fill cover &amp; details from Open Library</label>
+                    <div class="lookup-row">
+                        <input id="lookup-query" type="text" placeholder="Search by title or ISBN…" />
+                        <button type="button" id="lookup-btn">Search</button>
+                    </div>
+                    <div id="lookup-preview" class="lookup-preview hidden">
+                        <img id="preview-img" src="" alt="Cover preview" />
+                        <div>
+                            <p id="preview-title"></p>
+                            <p id="preview-author"></p>
+                            <button type="button" id="use-result-btn">Use this</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!--main form-->
+                <form action="<%= book && book.id ? '/edit/' + book.id : '/add' %>" method="POST" class="book-form">
+                    <div class="field">
+                        <label for="title">Title <span class="required">*</span></label>
+                        <input id="title" name="title" type="text" required value="<%= book ? book.title || '' : '' %>" />
+                    </div>
+
+                    <div class="field">
+                        <label for="author">Author</label>
+                        <input id="author" name="author" type="text" value="<%= book ? book.author || '' : '' %>" />
+                    </div>
+
+                    <div class="field-row">
+                        <div class="field">
+                            <label for="rating">Rating <span class="hint">(1–10)</span></label>
+                            <input id="rating" name="rating" type="number" min="1" max="10" value="<%= book ? book.rating || '' : '' %>" />
+                        </div>
+
+                        <div class="field">
+                            <label for="date_read">Date Read</label>
+                            <input id="date_read" name="date_read" type="date" value="<%= book && book.date_read ? new Date(book.date_read).toISOString().slice(0, 10) : '' %>" />
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label for="cover_id">Open Library Cover ID</label>
+                        <input id="cover_id" name="cover_id" type="text" placeholder="e.g. 8739161" value="<%= book ? book.cover_id || '' : '' %>" />
+                        <small>Find it at <a href="https://openlibrary.org" target="_blank">openlibrary.org</a> — or use the search above.</small>
+                    </div>
+
+                    <div class="field">
+                        <label for="notes">Notes</label>
+                        <textarea id="notes" name="notes" rows="6" placeholder="Your thoughts, quotes, takeaways…"><%= book ? book.notes || '' : '' %></textarea>
+                    </div>
+
+                    <div class="form-footer">
+                        <a href="/" class="btn-cancel">Cancel</a>
+                        <button type="submit" class="btn-submit">
+          <%= book && book.id ? 'Save Changes' : 'Add to Shelf' %>
+        </button>
+                    </div>
+                </form>
+    </div>
+
+    <script>
+        //open library cover lookup
+        const lookupBtn = document.getElementById("lookup-btn");
+        const lookupQuery = document.getElementById("lookup-query");
+        const preview = document.getElementById("lookup-preview");
+        const previewImg = document.getElementById("preview-img");
+        const previewTitle = document.getElementById("preview-title");
+        const previewAuthor = document.getElementById("preview-author");
+        const useBtn = document.getElementById("use-result-btn");
+
+        let foundResult = {};
+
+        lookupBtn.addEventListener("click", async() => {
+            const q = lookupQuery.value.trim();
+            if (!q) return;
+            lookupBtn.textContent = "Searching…";
+
+            try {
+                const res = await fetch(`/api/search-cover?q=${encodeURIComponent(q)}`);
+                const data = await res.json();
+
+                if (data.cover_id) {
+                    foundResult = data;
+                    previewImg.src = `https://covers.openlibrary.org/b/id/${data.cover_id}-M.jpg`;
+                    previewTitle.textContent = data.title || "";
+                    previewAuthor.textContent = data.author ? `by ${data.author}` : "";
+                    preview.classList.remove("hidden");
+                } else {
+                    alert("No cover found. Try a different query or enter the ID manually.");
+                }
+            } catch (e) {
+                alert("Search failed. Check your connection.");
+            } finally {
+                lookupBtn.textContent = "Search";
+            }
+        });
+
+        useBtn.addEventListener("click", () => {
+            if (foundResult.cover_id)
+                document.getElementById("cover_id").value = foundResult.cover_id;
+            if (foundResult.title && !document.getElementById("title").value)
+                document.getElementById("title").value = foundResult.title;
+            if (foundResult.author && !document.getElementById("author").value)
+                document.getElementById("author").value = foundResult.author;
+            preview.classList.add("hidden");
+        });
+    </script>
+</body>
+
+</html>

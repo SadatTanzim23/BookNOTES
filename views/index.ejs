@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>BookNotes</title>
+    <link rel="stylesheet" href="/styles/main.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,500&family=Lora:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet" />
+</head>
+
+<body>
+    <header class="site-header">
+        <div class="header-inner">
+            <div class="header-title">
+                <img src="/assets/bookNOTES.png" alt="BookNotes" class="site-logo" />
+                <!--<h1 id="main-title" style="font-family: 'Pinyon Script', cursive; font-size: 2.6rem;">BookNOTES</h1>-->
+                <h1 id="main-title">BookNOTES</h1>
+            </div>
+            <a href="/add" class="btn-add">+ Add Book</a>
+        </div>
+    </header>
+
+    <!--sort bar at the top-->
+    <div class="sort-bar">
+        <span class="sort-label">Sort by</span>
+        <div class="sort-pills">
+            <a href="/?sort=date" class="pill <%= currentSort === 'date'   ? 'active' : '' %>">Most Recent</a>
+            <a href="/?sort=rating" class="pill <%= currentSort === 'rating' ? 'active' : '' %>">Top Rated</a>
+            <a href="/?sort=title" class="pill <%= currentSort === 'title'  ? 'active' : '' %>">Title A–Z</a>
+        </div>
+        <span class="book-count"><%= books.length %> book<%= books.length !== 1 ? 's' : '' %></span>
+    </div>
+
+    <!--books grid-->
+    <main class="book-grid">
+        <% if (books.length === 0) { %>
+            <div class="empty-state">
+                <p>No books yet. <a href="/add">Add your first one →</a></p>
+            </div>
+            <% } %>
+
+                <% books.forEach(book => { %>
+                    <article class="book-card">
+
+                        <!--cover-->
+                        <div class="book-cover">
+                            <% if (book.cover_url) { %>
+                                <img src="<%= book.cover_url %>" alt="Cover of <%= book.title %>" loading="lazy" />
+                                <% } else { %>
+                                    <div class="cover-placeholder">
+                                        <span><%= book.title.charAt(0) %></span>
+                                    </div>
+                                    <% } %>
+                        </div>
+
+                        <!--info-->
+                        <div class="book-info">
+                            <h2 class="book-title">
+                                <%= book.title %>
+                            </h2>
+                            <% if (book.author) { %>
+                                <p class="book-author">by
+                                    <%= book.author %>
+                                </p>
+                                <% } %>
+
+                                    <div class="book-meta">
+                                        <% if (book.rating) { %>
+                                            <span class="rating">
+                <% for (let i = 1; i <= 10; i++) { %>
+                  <span class="<%= i <= book.rating ? 'star filled' : 'star' %>">★</span>
+                                            <% } %>
+                                                <em><%= book.rating %>/10</em>
+                                                </span>
+                                                <% } %>
+                                                    <% if (book.date_read) { %>
+                                                        <span class="date-read">
+                <%= new Date(book.date_read).toLocaleDateString('en-US', { year: 'numeric', month: 'short' }) %>
+              </span>
+                                                        <% } %>
+                                    </div>
+
+                                    <% if (book.notes) { %>
+                                        <p class="book-notes">
+                                            <%= book.notes %>
+                                        </p>
+                                        <% } %>
+
+                                            <!--actions-->
+                                            <div class="book-actions">
+                                                <a href="/edit/<%= book.id %>" class="btn-edit">Edit</a>
+                                                <form action="/delete/<%= book.id %>" method="POST" onsubmit="return confirm('Delete this book?')">
+                                                    <button type="submit" class="btn-delete">Delete</button>
+                                                </form>
+                                            </div>
+                        </div>
+
+                    </article>
+                    <% }) %>
+    </main>
+
+</body>
+
+</html>
